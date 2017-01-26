@@ -1,0 +1,2 @@
+scl-utils:
+  pkg.installed

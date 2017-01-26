@@ -1,0 +1,16 @@
+vars.jinja:
+{%- set fqdn = [] %}
+{%- set hostname = grains['id'] %}
+{%- set domain = "cloud.dcmn.com" %}
+{%- set fqdn = hostname + '.' + domain %}
+{%- set realm = domain.upper()%}
+{%- set ip = salt['network.interface_ip']('eth0') %}
+
+{%- set vars = {
+    'fqdn' : fqdn,
+    'hostname' : hostname,
+    'domain' : domain,
+    'fqdn' : fqdn,
+    'realm' : realm,
+    'ip' : ip,    
+} %}

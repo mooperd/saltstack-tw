@@ -1,0 +1,96 @@
+---
+- hosts: newspark
+  remote_user: root
+  sudo: yes
+  tasks:
+  - group: name=dcmn state=present gid=2100
+  - name: create dcmn user with admin previleges
+    user: name=dcmn uid=2100 group=dcmn
+  - name: upgrade all packages
+    yum: name=* state=latest
+
+# missing packages     
+  - name: install epel-release
+    yum: name=epel-release state=latest
+  - name: install policycoreutils-python
+    yum: name=policycoreutils-python state=latest
+
+  - name: remove chrony - the chrony NTP deamon is conflicting with ntpd
+    yum: name=chrony state=removed
+  - name: install ntp
+    yum: name=ntp state=latest
+  - name: including ntp.conf
+    copy: src=files/ntp.conf dest=/etc/ntp.conf owner=root group=root mode=0644
+ 
+  - name: "Install Common Libraries"
+    yum: pkg={{item}} state=installed
+    with_items:  
+      - bind-utils
+      - telnet
+      - htop
+      - screen
+      - strace
+      - lsof
+      - psmisc
+      - sysstat
+      - nano
+      - wget
+      - zip
+      - unzip   
+  
+# download and installation of Anaconda
+  - name: load Anaconda
+    get_url: url='https://3230d63b5fc54e62148e-c95ac804525aac4b6dba79b00b39d1d3.ssl.cf1.rackcdn.com/Anaconda3-4.0.0-Linux-x86_64.sh' dest=/tmp/
+  - name: install Anaconda
+    command: bash Anaconda3-4.0.0-Linux-x86_64.sh -b -f -p /home/dcmn/anaconda3
+    args:
+      chdir: /tmp/
+  - name: change owner of anaconda3
+    file: path=/home/dcmn/anaconda3 owner=dcmn group=dcmn
+  
+# .bashrc of dcmn  
+  - name: add stuff to .bashrc
+    lineinfile: dest=/home/dcmn/.bashrc line='export PYSPARK_PYTHON=python3' owner=dcmn group=dcmn mode=0644
+  - name: add anaconda stuff to .bashrc
+    lineinfile: dest=/home/dcmn/.bashrc line='export PATH=/home/dcmn/anaconda3/bin:$PATH:/opt/spark-1.6.1-bin-hadoop2.6/bin' owner=dcmn group=dcmn mode=0644
+
+ # dowload and install spark
+  - name: spark download
+    get_url: url='http://mirror.ox.ac.uk/sites/rsync.apache.org/spark/spark-1.6.1/spark-1.6.1-bin-hadoop2.6.tgz' dest=/tmp/ 
+  - name: unzipping spark to an appropiate dirctory
+    unarchive: src='/tmp/spark-1.6.1-bin-hadoop2.6.tgz' dest=/opt/ copy=no
+ 
+# limits.conf   
+  - name: change soft limits for group dcmn (part 1)
+    lineinfile: dest=/etc/security/limits.conf regexp='^\@dcmn\s*-\s*nofile' state=absent
+  - name: change soft limits for group dcmn (part 2)
+    lineinfile: dest=/etc/security/limits.conf line='@dcmn - nofile 16384'
+
+# copy timezoneinfo
+  - name: set system timezone to UTC
+    copy: src=/usr/share/zoneinfo/UTC dest=/etc/localtime force='yes'
+
+# GeoIP stuff
+  - name: new path for GeoIP database
+    file: path=/usr/share/GeoIP state=directory mode=0755
+  - name: install geoipdownloader
+    copy: src=files/geoipdownloader.sh dest=/usr/local/bin/geoipdownloader.sh
+  - command: /bin/bash /usr/local/bin/geoipdownloader.sh
+  - name: add crontab entry
+    cron: name="refresh_GeiIP database" minute="0" hour="4" weekday="6" job="/bin/bash /usr/local/bin/geoipdownloader.sh > /dev/null"
+
+# user dcmn@hadoop
+  - name: create user dcmn@hadoop
+    command: hadoop fs -mkdir -p /user/dcmn
+  - command: hadoop fs -chown dcmn:dcmn /user/dcmn
+  - command: hadoop fs -chmod 755 /user/dcmn
+   
+# commenting out these lines from /etc/ssh/sshd_config  
+  - name: cleanup ssh_config
+    lineinfile: dest=/etc/ssh/sshd_config regexp='^#?AcceptEnv' state=absent
+  - name: prepare ssh_config
+    lineinfile: dest=/etc/ssh/sshd_config line='#AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES'
+  - lineinfile: dest=/etc/ssh/sshd_config line='#AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT'
+  - lineinfile: dest=/etc/ssh/sshd_config line='#AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE'
+  - lineinfile: dest=/etc/ssh/sshd_config line='#AcceptEnv XMODIFIERS'  
+

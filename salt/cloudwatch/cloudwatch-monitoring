@@ -1,0 +1,96 @@
+#!/bin/bash
+# vim: set expandtab ts=4 sw=4 tw=0:
+
+#This key is set in the salt pillar. These access credentials can only be used to access the Cloudwatch resource
+export AWS_CONFIG_FILE=/home/centos/.aws/cloudwatch-config 
+
+# detect instance id
+echo -n "Instance-Id  : "
+instanceId=$(curl -sS --connect-timeout 5 http://169.254.169.254/latest/meta-data/instance-id)
+if [ $? != 0 ]; then
+    exit 1
+fi;
+echo "$instanceId"
+
+# detect instance name
+instanceName=$(hostname | sed "s/\\..*//g")
+echo "Instance-Name: $instanceName"
+
+# detect namespace
+namespace=$(hostname | sed "s/[^a-z].*//g")
+echo "Namespace    : $namespace"
+
+declare -a metrics=();
+
+defaultDimensions="{
+    \"Name\":\"InstanceId\",
+    \"Value\":\"${instanceId}\"
+}"
+
+function mem_info {
+    declare -A meminfo=()
+    while IFS=$' \t:' read -r name value _
+    do 
+        meminfo[$name]=$value 
+    done
+
+    metrics+=("{
+        \"MetricName\":\"MemoryAvailable\",
+        \"Value\":${meminfo[MemAvailable]},
+        \"Unit\":\"Kilobytes\",
+        \"Dimensions\":[${defaultDimensions}]
+    }")
+    metrics+=("{
+        \"MetricName\":\"MemoryUtilization\",
+        \"Value\":$((100 - 100 * ${meminfo[MemAvailable]} / ${meminfo[MemTotal]})),
+        \"Unit\":\"Percent\",
+        \"Dimensions\":[${defaultDimensions}]
+    }")
+}
+
+function disk_info {
+    while IFS=$' %' read -r filesystem blocks used available percent _
+    do
+        metrics+=("{
+            \"MetricName\":\"SpaceUtilization\",
+            \"Value\":${percent},
+            \"Unit\":\"Percent\",
+            \"Dimensions\":[
+                ${defaultDimensions},
+                {
+                    \"Name\":\"Resource\",
+                    \"Value\":\"${filesystem}\"
+                }
+            ]
+        }")
+    done
+}
+
+function inodes_info {
+    while IFS=$' %' read -r filesystem blocks used available percent _
+    do
+        metrics+=("{
+            \"MetricName\":\"InodeUtilization\",
+            \"Value\":${percent},
+            \"Unit\":\"Percent\",
+            \"Dimensions\":[
+                ${defaultDimensions},
+                {
+                    \"Name\":\"Resource\",
+                    \"Value\":\"${filesystem}\"
+                }
+            ]
+        }")
+    done
+}
+
+# Collect metrics
+mem_info < /proc/meminfo
+disk_info < <(df | grep xvd)
+inodes_info < <(df -i | grep xvd)
+
+# put all into one JSON and send it
+json="[$(IFS=,; echo "${metrics[*]}")]"
+aws cloudwatch put-metric-data --namespace "$namespace" --metric-data="$json"
+
+exit $?

@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>sync container tags from API to all piwik=data instances, schedule: every hour</description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <authToken>iUHkejgrgnkj434u32jfbndkjsg</authToken>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash
+
+. ${dcmnJenkinsControl}/helper.sh
+
+siteIds=`piwikGetAllSites | awk -F&apos;,&apos; &apos;{ print $1; }&apos;`;
+
+for siteId in $siteIds
+do
+    echo $siteId;
+
+    wget &quot;${piwikHost}/plugins/ContainerTag/js/$siteId.js&quot; -O &quot;${WORKSPACE}/&quot;tracking$siteId.js || rm -f &quot;${WORKSPACE}/&quot;tracking$siteId.js
+    wget &quot;${piwikHost}/plugins/ContainerTag/js/v2/$siteId.js&quot; -O &quot;${WORKSPACE}/&quot;t$siteId.js || rm -f &quot;${WORKSPACE}/&quot;t$siteId.js
+done</command>
+    </hudson.tasks.Shell>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash
+
+trackingJsFiles=`ls -1 ${WORKSPACE}`;
+
+for trackingJsFileOn in $trackingJsFiles
+do
+     echo &quot;SCP file: $trackingJsFileOn&quot;;
+     scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${pemFile2} ${WORKSPACE}/$trackingJsFileOn ${sshUserCentos}@52.17.63.116:/usr/share/nginx/html/$trackingJsFileOn;
+done</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.Mailer plugin="mailer@1.8">
+      <recipients>dev@dcmn.com</recipients>
+      <dontNotifyEveryUnstableBuild>false</dontNotifyEveryUnstableBuild>
+      <sendToIndividuals>false</sendToIndividuals>
+    </hudson.tasks.Mailer>
+  </publishers>
+  <buildWrappers/>
+</project>

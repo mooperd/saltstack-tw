@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash
+
+export JAVA_HOME=&apos;/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.55.x86_64/jre&apos;;
+export AWS_RDS_HOME=&apos;/opt/aws/apitools/rds&apos;;
+export PATH=$PATH:$AWS_RDS_HOME/bin;
+export AWS_CREDENTIAL_FILE=&apos;/opt/aws/credential-file-path.template&apos;;
+
+echo &quot;Creating snapshot&quot;;
+rds-create-db-snapshot -i loganalytics2 -s &apos;report2-8-new&apos; --region eu-west-1;
+sleep 60;
+
+while [ `rds-describe-db-instances  --show-long --region eu-west-1 | grep loganalytics2 | cut -d, -f9` != &apos;available&apos; ]; do {
+    echo &quot;waiting&quot;;
+    sleep 30;
+} done
+
+echo &quot;Restoring snapshot&quot;;
+rds-restore-db-instance-from-db-snapshot --db-instance-identifier &apos;report2-8-new&apos; --db-snapshot-identifier &apos;report2-8-new&apos; --region eu-west-1 --db-instance-class db.m3.xlarge --port 3306 --availability-zone eu-west-1a;
+sleep 60;
+
+while [ `rds-describe-db-instances  --show-long --region eu-west-1 | grep &apos;report2-8-new&apos; | cut -d, -f9` != &apos;available&apos; ]; do {
+    echo &quot;waiting&quot;;
+    sleep 30;
+} done
+
+
+echo &quot;Upgrade storage and IOPS to 800 and 8000&quot;;
+rds-modify-db-instance &apos;report2-8-new&apos; --allocated-storage 800 --iops 8000 --apply-immediately --region eu-west-1;
+sleep 60;
+
+while [ `rds-describe-db-instances  --show-long --region eu-west-1 | grep &apos;report2-8-new&apos; | cut -d, -f9` != &apos;available&apos; ]; do {
+    echo &quot;waiting&quot;;
+    sleep 30;
+} done
+</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

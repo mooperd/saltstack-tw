@@ -1,0 +1,3 @@
+{% for server, data in salt['mine.get']('roles:master', 'grains.get', expr_form='grain').items() %}
+{{ data['localhost'] }}
+{% endfor %}

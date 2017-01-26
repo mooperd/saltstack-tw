@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for siteId in $(curl -s1 -w "%{http_code}" "http://report2.dcmn.com/index.php?module=API&method=SitesManager.getAllSites&format=JSON&token_auth=b621c59ea7f70907b3da0d6afff890f8" | jq '.[]' | jq [.idsite] | jq -r '@csv' | tr -d '"') 
+	do 
+          curl "$1/plugins/ContainerTag/js/$siteId.js" -o t$siteId.js
+	done
