@@ -1,0 +1,9 @@
+[Unit]
+Description=Frontend Service
+[Service]
+Environment="APP_PORT=8081"
+ExecStart=/usr/bin/java -jar /home/centos/bin/quote.jar
+Type=simple
+User=centos
+[Install]
+WantedBy=multi-user.target

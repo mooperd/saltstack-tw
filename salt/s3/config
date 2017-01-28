@@ -1,5 +1,0 @@
-[default]
-region = {{ pillar.region }}
-aws_access_key_id = {{ pillar.s3_aws_access_key_id }}
-aws_secret_access_key = {{ pillar.s3_aws_access_key }}
-output = json

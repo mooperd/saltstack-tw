@@ -1,4 +1,0 @@
-{% for server, addrs in salt['mine.get']('roles:master', 'network.ip_addrs', expr_form='grain').items() %}
-{{ addrs[0] }}
-{% endfor %}
-

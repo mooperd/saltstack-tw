@@ -1,16 +1,6 @@
 /.vagrant
 
-salt/piwik-prod/html
-salt/piwik-prod/log-import-stuff
-salt/freeipa-replica/openvpn-certs
-
-# ignore pillars files that have a *.dist.sls file
-pillar/dcmn.sls
-pillar/piwik.sls
-pillar/piwik-*.sls
-pillar/api.sls
-pillar/api-*.sls
-pillar/freeipa.sls
+*.jar
 
 # ignore OS metadata files
 .DS_Store
