@@ -10,5 +10,5 @@ base:
   'wibble*':
     - frontend
     - newsfeed
-    - quote
+    - quotes
     - nginx

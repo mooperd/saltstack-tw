@@ -1,8 +1,8 @@
 [Unit]
-Description=Frontend Service
+Description=Quotes Service
 [Service]
 Environment="APP_PORT=8081"
-ExecStart=/usr/bin/java -jar /home/centos/bin/quote.jar
+ExecStart=/usr/bin/java -jar /home/centos/bin/quotes.jar
 Type=simple
 User=centos
 [Install]

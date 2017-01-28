@@ -18,4 +18,7 @@ nginx.service:
     - watch:
       - pkg:  nginx
       - file: /etc/nginx/nginx.conf
-      - file: /etc/nginx/conf.d/*
+
+# make SELinux allow nginx to connect to service.
+setsebool httpd_can_network_connect 1 -P:
+  cmd.run

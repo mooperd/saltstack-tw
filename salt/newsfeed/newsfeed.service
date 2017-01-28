@@ -1,8 +1,8 @@
 [Unit]
-Description=Frontend Service
+Description=Newsfeed Service
 [Service]
-Environment="APP_PORT=8081"
-ExecStart=/usr/bin/java -jar /home/centos/bin/quote.jar
+Environment="APP_PORT=8082"
+ExecStart=/usr/bin/java -jar /home/centos/bin/newsfeed.jar
 Type=simple
 User=centos
 [Install]

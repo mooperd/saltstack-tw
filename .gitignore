@@ -1,6 +1,7 @@
 /.vagrant
 
 *.jar
+*.css
 
 # ignore OS metadata files
 .DS_Store
