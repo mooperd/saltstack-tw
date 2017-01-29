@@ -2,15 +2,3 @@ t2-small:
   - web1:
       minion:
         startup_states: highstate
-  - web2:
-      minion:
-        startup_states: highstate
-  - web3:
-      minion:
-        startup_states: highstate
-  - web4:
-      minion:
-        startup_states: highstate
-  - web5:
-      minion:
-        startup_states: highstate
