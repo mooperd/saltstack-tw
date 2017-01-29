@@ -1,0 +1,4 @@
+t2-small:
+  - web1:
+    minion:
+      startup_states: highstate

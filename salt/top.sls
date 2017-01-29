@@ -7,7 +7,7 @@ base:
     - tools
 
   # This should be installed on all production instances
-  'wibble*':
+  'web*':
     - frontend
     - newsfeed
     - quotes
